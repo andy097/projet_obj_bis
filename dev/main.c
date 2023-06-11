@@ -1,12 +1,21 @@
+
 #include <stdio.h>
 #include <wiringPi.h>
 #include <pthread.h>
-#include "climb_race.h"
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+#define LEFT_PEDAL_PIN 17
+#define RIGHT_PEDAL_PIN 26
+#define SPEAKER_PIN 18
+
+#define SHM_KEY 1234
 
 int pedalPressed; // Indicateur de l'état de la pédale
 double startMillis; // Temps de départ de la pédale en millisecondes
 double startChronoMillis; // Temps de départ du chrono
-double elapsedSeconds;
+int elapsedMillis; // Temps écoulé en millisecondes
 
 double startDelay = 3000.0; // Délai d'attente pour le départ en millisecondes
 int chronoStarted = 0; // Indicateur du démarrage du chrono
@@ -15,12 +24,37 @@ pthread_t pedalThread; // Thread pour la pédale
 pthread_t chronoThread; // Thread pour le chrono
 pthread_mutex_t mutex; // Mutex pour la synchronisation des threads
 
+typedef struct {
+    int pedalPressed;
+    int elapsedMillis;
+} SharedData;
+
+SharedData* openSharedMemory() {
+    int shmid;
+    key_t key = SHM_KEY;
+    SharedData* sharedData;
+
+    // Création de la mémoire partagée
+    if ((shmid = shmget(key, sizeof(SharedData), IPC_CREAT | 0666)) < 0) {
+        perror("Erreur lors de la création de la mémoire partagée");
+        pthread_exit(NULL);
+    }
+
+    // Attacher la mémoire partagée
+    if ((sharedData = (SharedData*)shmat(shmid, NULL, 0)) == (SharedData*)-1) {
+        perror("Erreur lors de l'attachement de la mémoire partagée");
+        pthread_exit(NULL);
+    }
+
+    return sharedData;
+}
+
 void initVariables() {
     // Réinitialiser les variables pour la prochaine course
     pedalPressed = 0;
     startMillis = 0;
     startChronoMillis = 0;
-    elapsedSeconds = 0.0;
+    elapsedMillis = 0;
     chronoStarted = 0;
 
     printf("Attente d'un grimpeur souhaitant s'entraîner...\n");
@@ -40,12 +74,18 @@ void playSound(int frequency, int duration) {
 }
 
 void* waitForPedal(void* arg) {
+    SharedData* sharedData = openSharedMemory();
+
+    // Initialisation des données partagées
+    sharedData->pedalPressed = 0;
+    sharedData->elapsedMillis = 0;
+    
     while (1) {
         int currentPedalState = digitalRead(LEFT_PEDAL_PIN);
 
-        if (!pedalPressed && currentPedalState == HIGH) {
+        if (!sharedData->pedalPressed && currentPedalState == HIGH) {
             // Pédale maintenue appuyée
-            pedalPressed = 1;
+            sharedData->pedalPressed = 1;
 
             printf("Pédale pressée !\n");
             delay(3000);
@@ -69,25 +109,36 @@ void* waitForPedal(void* arg) {
         }
     }
 
+    // Détacher la mémoire partagée
+    if (shmdt(sharedData) == -1) {
+        perror("Erreur lors du détachement de la mémoire partagée");
+    }
+
     pthread_exit(NULL);
 }
 
 void* startChrono(void* arg) {
+    SharedData* sharedData = openSharedMemory();
+
     while (1) {
         pthread_mutex_lock(&mutex);
         int currentChronoStarted = chronoStarted;
         pthread_mutex_unlock(&mutex);
 
         if (currentChronoStarted) {
-            double elapsedSeconds = (millis() - startChronoMillis) / 1000.0;
+            int elapsedMillis = millis() - startChronoMillis;
 
             pthread_mutex_lock(&mutex);
-            elapsedSeconds = elapsedSeconds;
+            sharedData->elapsedMillis = elapsedMillis;
             pthread_mutex_unlock(&mutex);
+            
+            int minutes = (elapsedMillis / 60000) % 60;
+            int seconds = (elapsedMillis / 1000) % 60;
+            int centiseconds = (elapsedMillis / 10) % 100;
 
-            printf("Temps écoulé : %.2f s\n", elapsedSeconds);
+            printf("Temps écoulé : %02d:%02d:%02d\n", minutes, seconds, centiseconds);
 
-            if (elapsedSeconds >= 5.0) {
+            if (elapsedMillis >= 5000) {
                 pthread_mutex_lock(&mutex);
                 chronoStarted = 0;
                 pthread_mutex_unlock(&mutex);
@@ -105,6 +156,13 @@ void* startChrono(void* arg) {
 
         delay(10);
     }
+
+    // Détacher la mémoire partagée
+    if (shmdt(sharedData) == -1) {
+        perror("Erreur lors du détachement de la mémoire partagée");
+    }
+
+    pthread_exit(NULL);
 }
 
 int main(void) {
