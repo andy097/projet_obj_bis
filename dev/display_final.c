@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <gtk/gtk.h>
 #include <sys/types.h>
@@ -12,11 +11,14 @@ GtkWidget *labelClimberLeft;
 GtkWidget *labelClimberRight;
 GtkWidget *labelChronoLeft;
 GtkWidget *labelChronoRight;
-gboolean running = FALSE;
+gboolean runningLeft = FALSE;
+gboolean runningRight = FALSE;
 
 typedef struct {
-    int pedalPressed;
-    int elapsedMillis;
+    int pedalLeftPressed;
+	int pedalRightPressed;
+    int elapsedMillisLeft;
+    int elapsedMillisRight;
 } SharedData;
 
 SharedData* openSharedMemory() {
@@ -27,49 +29,48 @@ SharedData* openSharedMemory() {
     // Création de la mémoire partagée
     if ((shmid = shmget(key, sizeof(SharedData), IPC_CREAT | 0666)) < 0) {
         perror("Erreur lors de la création de la mémoire partagée");
-        pthread_exit(NULL);
+        exit(1);
     }
 
     // Attacher la mémoire partagée
     if ((sharedData = (SharedData*)shmat(shmid, NULL, 0)) == (SharedData*)-1) {
         perror("Erreur lors de l'attachement de la mémoire partagée");
-        pthread_exit(NULL);
+        exit(1);
     }
 
     return sharedData;
 }
 
-gboolean updateClock(gpointer data) {
-    SharedData* sharedData = openSharedMemory();
+gboolean updateClocks(gpointer data) {
+    SharedData* sharedData = (SharedData*) data;
 
-    if (sharedData->pedalPressed) {
-        int elapsedMillis = sharedData->elapsedMillis;
+    if (runningLeft || sharedData->pedalLeftPressed) {
+        runningLeft = TRUE;
+        int tempsEcoulePedaleG = sharedData->elapsedMillisLeft;
 
-        int minutes = (elapsedMillis / 60000) % 60;
-        int seconds = (elapsedMillis / 1000) % 60;
-        int centiseconds = (elapsedMillis / 10) % 100;
+        int minutesG = (tempsEcoulePedaleG / 60000) % 60;
+        int secondsG = (tempsEcoulePedaleG / 1000) % 60;
+        int centisecondsG = (tempsEcoulePedaleG / 10) % 100;
 
-        gchar *timeStr = g_strdup_printf("%02d:%02d:%02d", minutes, seconds, centiseconds);
-        gtk_label_set_text(GTK_LABEL(labelChronoLeft), timeStr);
-        g_free(timeStr);
+        gchar *timeStrLeft = g_strdup_printf("%02d:%02d:%02d", minutesG, secondsG, centisecondsG);
+        gtk_label_set_text(GTK_LABEL(labelChronoLeft), timeStrLeft);
+        g_free(timeStrLeft);
     }
 
-    // Détacher la mémoire partagée
-    if (shmdt(sharedData) == -1) {
-        perror("Erreur lors du détachement de la mémoire partagée");
-        exit(1);
+    if (runningRight || sharedData->pedalRightPressed) {
+        runningRight = TRUE;
+        int tempsEcoulePedaleD = sharedData->elapsedMillisRight;
+
+        int minutesD = (tempsEcoulePedaleD / 60000) % 60;
+        int secondsD = (tempsEcoulePedaleD / 1000) % 60;
+        int centisecondsD = (tempsEcoulePedaleD / 10) % 100;
+
+        gchar *timeStrRight = g_strdup_printf("%02d:%02d:%02d", minutesD, secondsD, centisecondsD);
+        gtk_label_set_text(GTK_LABEL(labelChronoRight), timeStrRight);
+        g_free(timeStrRight);
     }
 
     return G_SOURCE_CONTINUE;
-}
-
-void startStopClicked(GtkWidget *widget, gpointer data) {
-    running = !running;
-    if (running) {
-        gtk_button_set_label(GTK_BUTTON(widget), "Stop");
-    } else {
-        gtk_button_set_label(GTK_BUTTON(widget), "Start");
-    }
 }
 
 int main(int argc, char *argv[]) {
@@ -144,13 +145,21 @@ int main(int argc, char *argv[]) {
     
     // Affichage des éléments
     gtk_widget_show_all(window);
+
+    // Initialisez la mémoire partagée une seule fois
+    SharedData* sharedData = openSharedMemory();
     
     // Lancement de la mise à jour du chrono
-    g_timeout_add(10, updateClock, NULL);
+    g_timeout_add(10, updateClocks, sharedData);
     
     // Lancement de la boucle principale de GTK
     gtk_main();
+
+    // Détachez la mémoire partagée après la fin de la boucle principale
+    if (shmdt(sharedData) == -1) {
+        perror("Erreur lors du détachement de la mémoire partagée");
+        exit(1);
+    }
     
     return 0;
 }
-
