@@ -161,7 +161,7 @@ void* gererPedaleG(void* arg) {
 			}
 		}
 
-		// Si la pédaleG est relachée, nous réinistalisons le temps de départ
+		// Si la pédaleG est relâchée, nous réinitialisons le temps de départ
 		if (sharedData->pedalLeftPressed && pedalState == LOW && !partieEnCours) {
 			pthread_mutex_lock(&mutexPedaleG);
 			tempsDepart = 0; // Nous réinitialisons le temps de départ
@@ -406,11 +406,11 @@ void* gererAppuis(void* arg) {
 }
 
 /**************************************************************************************************/
-/*Fonction : demarrerJeu                                                                          */
+/*Fonction : demarrerPhaseInitialisation                                                                          */
 /* Description :   Nous gérons la phase d'initialisation avant le début d'une partie. Dans cette
 phase d'initialisation, nous synchronisons les pédales des 2 joueurs si ils sont prêts en utilisant une phase d'émission de sons             */
 /**************************************************************************************************/
-void* demarrerJeu(void* arg) {
+void* demarrerPhaseInitialisation(void* arg) {
 	faux_depart = 1;
 	while (1) {
 
@@ -461,7 +461,8 @@ void* demarrerJeu(void* arg) {
 				phaseInitialisationEnCours = 1;
 			}
 
-			//En sortie de boucle après le 3ème son, nous mettons à un les variables indiquant que les joueurs sont partis. Nous réveillons le socket qui lance la partie.
+			//En sortie de boucle après le 3ème son, nous mettons à un les variables indiquant que les joueurs sont partis.
+			//Nous réveillons le thread_execution_partie pour lancer la partie et les chronos
 			if (phaseInitialisationEnCours) {
 				pthread_mutex_lock(&mutexlancementPartie);
 				controleLancerPartie = 1;
@@ -663,7 +664,7 @@ void* lancerSocketClient(void* arg) {
 
 /**************************************************************************************************/
 /*Fonction : lancerPartie                                                                          */
-/* Description :   Nous lançons les chronos du joueur ou des joueurs en fonction 
+/* Description :   Nous lançons les chronos du joueur ou des joueurs en fonction
 des modes                                                                                              */
 /**************************************************************************************************/
 void* lancerPartie(void* arg) {
@@ -855,7 +856,7 @@ int main() {
 	//Nous créons les threads qui permettent de paralléliser les tâches
 	pthread_create(&thread_pedaleG, NULL, gererPedaleG, NULL);
 	pthread_create(&thread_pedaleD, NULL, gererPedaleD, NULL);
-	pthread_create(&thread_initialisation_partie, NULL, demarrerJeu, NULL);
+	pthread_create(&thread_initialisation_partie, NULL, demarrerPhaseInitialisation, NULL);
 	pthread_create(&thread_socket_client, NULL, lancerSocketClient, NULL);
 	pthread_create(&thread_execution_partie, NULL, lancerPartie, NULL);
 	pthread_create(&thread_appuis, NULL, gererAppuis, NULL);
