@@ -318,7 +318,7 @@ void* gererPedaleD(void* arg) {
 /**************************************************************************************************/
 /*Fonction : gererAppuis                                                                          */
 /* Description :   Nous gérons les évènements des appuis et longs. Ils permettent	respectivement
-d'enregistrer le chrono intermédiaire du joueur, et d'arrêter la partie cours et réinitialiser le système						*/
+d'enregistrer le chrono intermédiaire du joueur, et d'arrêter la partie en cours et réinitialiser le système						*/
 /**************************************************************************************************/
 void* gererAppuis(void* arg) {
 	double tempsDepart = 0; // Temps de départ en millisecondes
