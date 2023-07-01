@@ -545,28 +545,28 @@ int lancer_client_socket(int port, struct message *msg) {
 		struct message* message_recu = (struct message*)&response;
 
 		//Si nous recevons un message du serveur pour la pédaleG en mode 1 joueur, nous arretons la partie du joueurG
-		if (message_recu->mode_jeu == 1 && (strcmp(message_recu->message, "pedaleG-Callback") == 0)) {
+		if (message_recu->mode_jeu == 1 && (strcmp(message_recu->message, "pedaleG-Reponse-Serveur") == 0)) {
 			pthread_mutex_lock(&mutexPedaleG);
 			joueurGPret = 0;
 			partieEnCours = 0;
-			printf("1 Mode Joueur - pedaleG-Callback\n");
+			printf("1 Mode Joueur - pedaleG-Reponse-Serveur\n");
 			printf("mode jeu %d\n",message_recu->mode_jeu );
 			sharedData->finishedLeft = 1;
 			pthread_mutex_unlock(&mutexPedaleG);
 		}
 
 		//Si nous recevons un message du serveur pour la pédaleD en mode 1 joueur, nous arretons la partie du joueurG
-		if (message_recu->mode_jeu == 1 && (strcmp(message_recu->message, "pedaleD-Callback") == 0)) {
+		if (message_recu->mode_jeu == 1 && (strcmp(message_recu->message, "pedaleD-Reponse-Serveur") == 0)) {
 			pthread_mutex_lock(&mutexPedaleD);
 			joueurDPret = 0;
 			partieEnCours = 0;
-			printf("1 Mode Joueur - pedaleD-Callback\n");
+			printf("1 Mode Joueur - pedaleD-Reponse-Serveur\n");
 			sharedData->finishedRight = 1;
 			pthread_mutex_unlock(&mutexPedaleD);
 		}
 
 		//Si nous recevons un message du serveur pour la pédaleG en mode 2 joueurs, nous arretons la partie du joueurG
-		if (message_recu->mode_jeu == 2 && (strcmp(message_recu->message, "pedaleG-Callback") == 0)) {
+		if (message_recu->mode_jeu == 2 && (strcmp(message_recu->message, "pedaleG-Reponse-Serveur") == 0)) {
 			pthread_mutex_lock(&mutexMode2Joueurs);
 			joueurGPret = 0;
 			joueurGParti = 0;
@@ -574,13 +574,13 @@ int lancer_client_socket(int port, struct message *msg) {
 			if (!joueurDParti) {
 				partieEnCours = 0;
 			}
-			printf("Mode 2 Joueurs - pedaleG-Callback\n");
+			printf("Mode 2 Joueurs - pedaleG-Reponse-Serveur\n");
 			sharedData->finishedLeft = 1;
 			pthread_mutex_unlock(&mutexMode2Joueurs);
 		}
 
 		//Si nous recevons un message du serveur pour la pédaleD en mode 2 joueurs, nous arretons la partie du joueurG
-		if (message_recu->mode_jeu == 2 && (strcmp(message_recu->message, "pedaleD-Callback") == 0)) {
+		if (message_recu->mode_jeu == 2 && (strcmp(message_recu->message, "pedaleD-Reponse-Serveur") == 0)) {
 			pthread_mutex_lock(&mutexMode2Joueurs);
 			joueurDPret = 0;
 			joueurDParti = 0;
@@ -588,7 +588,7 @@ int lancer_client_socket(int port, struct message *msg) {
 			if (!joueurGParti) {
 				partieEnCours = 0;
 			}
-			printf("Mode 2 Joueurs - pedaleD-Callback\n");
+			printf("Mode 2 Joueurs - pedaleD-Reponse-Serveur\n");
 			sharedData->finishedRight = 1;
 			pthread_mutex_unlock(&mutexMode2Joueurs);
 		}
@@ -661,6 +661,11 @@ void* lancerSocketClient(void* arg) {
 	}
 }
 
+/**************************************************************************************************/
+/*Fonction : lancerPartie                                                                          */
+/* Description :   Nous lançons les chronos du joueur ou des joueurs en fonction 
+des modes                                                                                              */
+/**************************************************************************************************/
 void* lancerPartie(void* arg) {
 	while (1) {
 		pthread_mutex_lock(&mutexlancementPartie);

@@ -51,17 +51,17 @@ void* traiter_client(void* client_socket_ptr) {
       struct message message_reponse_serveur;
       message_reponse_serveur.mode_jeu = 1;
       message_reponse_serveur.statut = 1;
-      strcpy(message_reponse_serveur.message, "pedaleG-Callback");
+      strcpy(message_reponse_serveur.message, "pedaleG-Reponse-Serveur");
 
       int pedalState = digitalRead(BOUTONG_PIN);
       //Si la pédale est cliquée, nous envoyons le message au client
       if (pedalState == HIGH) {
 
         if (send(client_socket, &message_reponse_serveur, sizeof(message_reponse_serveur), 0) < 0) {
-          perror("Erreur lors de l'envoi du message de callback\n");
+          perror("Erreur lors de l'envoi du message de réponse\n");
           return -1;
         }
-        printf("Callback pedaleG envoyé\n");
+        printf("réponse pedaleG envoyé\n");
         break;
       }
     }
@@ -79,17 +79,17 @@ void* traiter_client(void* client_socket_ptr) {
       struct message message_reponse_serveur;
       message_reponse_serveur.mode_jeu = 1;
       message_reponse_serveur.statut = 1;
-      strcpy(message_reponse_serveur.message, "pedaleD-Callback");
+      strcpy(message_reponse_serveur.message, "pedaleD-Reponse-Serveur");
 
       int pedalState = digitalRead(BOUTOND_PIN);
       //Si la pédale est cliquée, nous envoyons le message au client
       if (pedalState == HIGH) {
         if (send(client_socket, &message_reponse_serveur, sizeof(message_reponse_serveur), 0) < 0) {
-          perror("Erreur lors de l'envoi du message de callback\n");
+          perror("Erreur lors de l'envoi du message de réponse\n");
           return -1;
         }
 
-        printf("Callback pedaleD envoyé\n");
+        printf("réponse pedaleD envoyé\n");
         break;
 
       }
@@ -112,17 +112,17 @@ void* traiter_client(void* client_socket_ptr) {
     struct message message_reponse_serveur;
     message_reponse_serveur.mode_jeu = 2;
     message_reponse_serveur.statut = 1;
-    strcpy(message_reponse_serveur.message, "pedaleD-Callback");
+    strcpy(message_reponse_serveur.message, "pedaleD-Reponse-Serveur");
 
     int pedalState = digitalRead(BOUTOND_PIN);
     //Si la pédale est cliquée, nous envoyons le message au client
     if (pedalState == HIGH) {
 
       if (send(client_socket, &message_reponse_serveur, sizeof(message_reponse_serveur), 0) < 0) {
-        perror("Erreur lors de l'envoi du message de callback\n");
+        perror("Erreur lors de l'envoi du message de réponse\n");
         return -1;
       }
-      printf("Callback pedaleG - mode 2 joueurs envoyé\n");
+      printf("réponse pedaleG - mode 2 joueurs envoyé\n");
       break;
     }
 
@@ -143,16 +143,16 @@ void* traiter_client(void* client_socket_ptr) {
       struct message message_reponse_serveur;
       message_reponse_serveur.mode_jeu = 2;
       message_reponse_serveur.statut = 1;
-      strcpy(message_reponse_serveur.message, "pedaleG-Callback");
+      strcpy(message_reponse_serveur.message, "pedaleG-Reponse-Serveur");
 
       int pedalState = digitalRead(BOUTONG_PIN);
       //Si la pédale est cliquée, nous envoyons le message au client
       if (pedalState == HIGH) {
         if (send(client_socket, &message_reponse_serveur, sizeof(message_reponse_serveur), 0) < 0) {
-          perror("Erreur lors de l'envoi du message de callback\n");
+          perror("Erreur lors de l'envoi du message de réponse\n");
           return -1;
         }
-        printf("Callback pedaleG - mode 2 joueurs envoyé\n");
+        printf("réponse pedaleG - mode 2 joueurs envoyé\n");
         break;
       }
 
