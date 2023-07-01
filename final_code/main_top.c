@@ -229,17 +229,17 @@ void* lancer_serveur_socket(void* port_ptr) {
 
 
 int main(int argc, char const* argv[]) {
-  pthread_t server_thread;
+  pthread_t thread_socket_serveur;
   intptr_t port = PORT;
   CHECK(wiringPiSetup(),"Erreur lors de l'initialisation de WiringPi\n");
   pinMode(BOUTOND_PIN, INPUT); // Nous configurons la broche  du bouton en mode entrée
   pinMode(BOUTONG_PIN, INPUT);  // Nous configurons la broche  du bouton en mode entrée
   pullUpDnControl(BOUTONG_PIN, PUD_UP);
   pullUpDnControl(BOUTOND_PIN, PUD_UP);
-  pthread_create(&server_thread, NULL, lancer_serveur_socket, (void*)port);
+  pthread_create(&thread_socket_serveur, NULL, lancer_serveur_socket, (void*)port);
 
   while (1);
-  pthread_join(server_thread, NULL);
+  pthread_join(thread_socket_serveur, NULL);
 
   return 0;
 }
